@@ -104,20 +104,23 @@ export class OrderBookEngine {
       this.invalidate();
     }
 
-    // Tighten spread bila melebar > 2.5× tick: market maker pasang di sisi dalam.
+    // Tighten spread bila melebar > 2.5× tick: market maker menempatkan level
+    // baru simetris di sekitar titik tengah spread (bukan hanya ask yang
+    // menempel ke bid). Menambah satu sisi saja akan menggeser mid secara
+    // sistematis ke arah sisi tersebut dan menghasilkan drift palsu.
     const bb = this.bestBid()!;
     const ba = this.bestAsk()!;
     if (ba - bb > step * 2.5) {
-      const na = round2(bb + step / 2);
+      const m = (bb + ba) / 2;
+      const nb = round2(m - step / 2);
+      const na = round2(m + step / 2);
+      if (nb > bb) {
+        this.bids.set(nb, this.nextSize(depthSize, rng));
+        this.invalidate();
+      }
       if (na < ba) {
         this.asks.set(na, this.nextSize(depthSize, rng));
         this.invalidate();
-      } else {
-        const nb = round2(ba - step / 2);
-        if (nb > bb) {
-          this.bids.set(nb, this.nextSize(depthSize, rng));
-          this.invalidate();
-        }
       }
     }
 

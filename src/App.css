@@ -765,11 +765,14 @@ body,
 }
 
 .cp-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background-color: var(--bg-card);
   color: var(--text-main);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 4px 10px;
+  padding: 5px 11px;
   font-size: 10px;
   font-weight: 500;
   cursor: pointer;
@@ -777,9 +780,43 @@ body,
 }
 
 .cp-preset-chip:hover:not(:disabled) {
+  border-color: var(--border-light);
+  background-color: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.cp-preset-chip.is-active {
   background-color: var(--accent-blue);
   color: #ffffff;
   border-color: var(--accent-blue);
+  box-shadow: 0 2px 8px rgba(41, 98, 255, 0.35);
+}
+
+.cp-preset-chip.is-active:hover:not(:disabled) {
+  background-color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+.cp-preset-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.cp-preset-desc {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  padding: 6px 8px;
+  background-color: var(--bg-panel);
+  border: 1px dashed var(--border-color);
+  border-radius: 6px;
 }
 
 .cp-cards-list {

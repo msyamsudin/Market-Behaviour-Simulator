@@ -1,5 +1,5 @@
 import { useChartStore, type ComponentConfig } from "../app/chartStore";
-import { PRESETS } from "./presets";
+import { PRESETS, activePresetId } from "./presets";
 
 interface Meta {
   title: string;
@@ -87,18 +87,33 @@ export function ComponentPanel() {
       <div className="cp-presets-section">
         <div className="cp-section-title">Market Presets</div>
         <div className="cp-presets-grid">
-          {Object.entries(PRESETS).map(([key, p]) => (
-            <button
-              key={key}
-              className="cp-preset-chip"
-              title={p.desc}
-              onClick={() => applyPreset(key)}
-              disabled={isLoading}
-            >
-              {p.label}
-            </button>
-          ))}
+          {Object.entries(PRESETS).map(([key, p]) => {
+            const active = activePresetId(components) === key;
+            return (
+              <button
+                key={key}
+                className={`cp-preset-chip ${active ? "is-active" : ""}`}
+                title={p.desc}
+                onClick={() => applyPreset(key)}
+                disabled={isLoading}
+                aria-pressed={active}
+              >
+                <span className="cp-preset-label">{p.label}</span>
+                {active && (
+                  <span className="cp-preset-check" aria-hidden="true">
+                    ✓
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
+        {(() => {
+          const activeKey = activePresetId(components);
+          const activeDesc =
+            activeKey === "custom" ? "Konfigurasi komponen diedit manual, tidak sesuai preset mana pun." : PRESETS[activeKey].desc;
+          return <div className="cp-preset-desc">{activeDesc}</div>;
+        })()}
       </div>
 
       <div className="cp-cards-list">

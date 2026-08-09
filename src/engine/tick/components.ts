@@ -50,6 +50,15 @@ export class TrendComponent implements TickComponent {
 }
 
 /**
+ * Langit-langit varian GARCH (kelipatan varian stasioner). Mencegah feedback
+ * tak stabil: shock memakai total delta SEMUA komponen (termasuk mean-reversion
+ * yang delta-nya tak terbatas proporsional deviasi harga), sehingga σ² bisa
+ * membesar eksponensial → Infinity/NaN. Cap 4× mempertahankan clustering
+ * namun membatasi ekor ledakan (delta per tick tetap terbatas).
+ */
+const SIGMA2_CEILING_MULTIPLIER = 4;
+
+/**
  * Volatilitas dinamis (GARCH(1,1)): variance berevolusi
  * σ² = omega + alpha·delta² + beta·σ², dengan alpha+beta < 1 (stasioner).
  * Volatilitas membesar setelah harga mulai bergerak lalu meluruh — menghasilkan
@@ -59,6 +68,7 @@ export class VolatilityComponent implements TickComponent {
   readonly id = "volatility";
   readonly params: ComponentParams;
   private sigma2: number;
+  private readonly sigma2Ceil: number;
   constructor(params?: Partial<ComponentParams>) {
     const p = withDefaults({ omega: 0.0004, alpha: 0.1, beta: 0.85, scale: 1 }, params);
     // Stasioneritas: jamin alpha + beta < 1 supaya sigma² awal terdefinisi
@@ -66,16 +76,21 @@ export class VolatilityComponent implements TickComponent {
     // melanggar dibatasi, bukan dibiarkan menghasilkan nilai negatif/infinite.
     if (p.alpha + p.beta >= 1) p.beta = Math.min(p.beta, 1 - p.alpha - 1e-3);
     this.params = p;
-    this.sigma2 = Math.max(this.params.omega / (1 - this.params.alpha - this.params.beta), Number.EPSILON);
+    const stationary = Math.max(p.omega / (1 - p.alpha - p.beta), Number.EPSILON);
+    this.sigma2Ceil = SIGMA2_CEILING_MULTIPLIER * stationary;
+    this.sigma2 = Math.min(stationary, this.sigma2Ceil);
   }
   next(ctx: ComponentContext): number {
     // Shock = total delta semua komponen pada tick sebelumnya (bukan delta
     // volatilitas saja): pergerakan besar dari sumber mana pun memicu
     // pergerakan besar berikutnya (volatility clustering).
     const shock = ctx.lastTotalDelta;
-    this.sigma2 = Math.max(
-      Number.EPSILON,
-      this.params.omega + this.params.alpha * shock * shock + this.params.beta * this.sigma2,
+    this.sigma2 = Math.min(
+      this.sigma2Ceil,
+      Math.max(
+        Number.EPSILON,
+        this.params.omega + this.params.alpha * shock * shock + this.params.beta * this.sigma2,
+      ),
     );
     const sigma = Math.sqrt(this.sigma2);
     return this.params.scale * sigma * randomNormal(ctx.rng);

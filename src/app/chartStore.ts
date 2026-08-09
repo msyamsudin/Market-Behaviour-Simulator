@@ -28,6 +28,12 @@ export interface ComponentConfig {
   params: Record<string, number>;
 }
 
+/** Satu fase simulasi: konfigurasi komponen (ter-resolve dari preset) + jumlah tick. */
+export interface PhaseEntry {
+  components: Record<string, ComponentConfig>;
+  count: number;
+}
+
 export const DEFAULT_COMPONENTS: Record<string, ComponentConfig> = {
   noise: { enabled: true, params: { noiseLevel: 0.1 } },
   trend: { enabled: true, params: { trendStrength: 0.01, trendBias: 0.3 } },
@@ -64,6 +70,8 @@ interface ChartStore {
   fullRenkoBricks: Brick[];
   bottomPane: BottomPane;
   components: Record<string, ComponentConfig>;
+  /** Urutan fase simulasi (rezim bergantian). null = mode tunggal dari editor komponen. */
+  phases: PhaseEntry[] | null;
   /** Seed PRNG untuk data sintetis. Seed sama + konfigurasi sama = seri identik. */
   seed: number;
   /** Mode generator tick: component (harga = jumlah delta) atau orderbook (harga = hasil matching LOB). */
@@ -92,6 +100,7 @@ interface ChartStore {
   setComponentEnabled: (id: string, enabled: boolean) => void;
   setComponentParam: (id: string, key: string, value: number) => void;
   setComponents: (components: Record<string, ComponentConfig>) => void;
+  setPhases: (phases: PhaseEntry[] | null) => void;
   setSeed: (seed: number) => void;
   setHtf: (id: string) => void;
   setIndicator: (id: string | null) => void;
@@ -174,6 +183,7 @@ export const useChartStore = create<ChartStore>((set, get) => ({
   fullRenkoBricks: [],
   bottomPane: "candle",
   components: cloneComponents(DEFAULT_COMPONENTS),
+  phases: null,
   seed: 42,
   source: "orderbook",
   obSpread: 0.02,
@@ -194,10 +204,15 @@ export const useChartStore = create<ChartStore>((set, get) => ({
     const gen = get()._loadGeneration + 1;
     set({ _loadGeneration: gen, isLoading: true, error: null });
     playbackEngine.stop();
-    const { components, source } = get();
+    const { components, source, phases } = get();
+    // Fase lebih diutamakan dari komponen tunggal: stream rng, harga, riwayat
+    // candle, variance GARCH, dan book LOB kontinu melewati batas fase.
+    const phaseList = phases
+      ? phases.map((p) => ({ count: p.count, components: buildComponents(p.components) }))
+      : undefined;
     const base = {
       seed: get().seed,
-      count: 7500,
+      count: phaseList ? phaseList.reduce((s, p) => s + p.count, 0) : 7500,
       startPrice: 100,
       startTime: SYNTHETIC_START_TIME,
       tickIntervalSeconds: 0.2,
@@ -215,6 +230,7 @@ export const useChartStore = create<ChartStore>((set, get) => ({
           spread: get().obSpread,
           depth: get().obDepth,
           depthSize: get().obDepthSize,
+          ...(phaseList ? { phases: phaseList } : {}),
         });
         ticks = await obSource.fetchTicks();
         orderbookSnapshots = obSource.snapshots();
@@ -222,6 +238,7 @@ export const useChartStore = create<ChartStore>((set, get) => ({
         const source = new SyntheticTickSource({
           ...base,
           baseVolume: 25,
+          ...(phaseList ? { phases: phaseList } : {}),
         });
         ticks = await source.fetchTicks();
         orderbookSnapshots = [];
@@ -234,6 +251,9 @@ export const useChartStore = create<ChartStore>((set, get) => ({
       const brickSize = get().brickSize;
       const renkoBricks = buildRenko(ticks, brickSize);
       playbackEngine.loadTicks(ticks, workerTimeframes(htfId), brickSize);
+      const fileTag = phaseList
+        ? `${phaseList.length} fase`
+        : `${enabledCount} komponen`;
       set({
         ticks,
         candlesByTimeframe: byTimeframe,
@@ -246,8 +266,8 @@ export const useChartStore = create<ChartStore>((set, get) => ({
         fullRenkoBricks: renkoBricks,
         tickCount: ticks.length,
         loadedFile: isOrderbook
-          ? `orderbook (${enabledCount} komponen, seed ${get().seed})`
-          : `synthetic (${enabledCount} komponen, seed ${get().seed})`,
+          ? `orderbook (${fileTag}, seed ${get().seed})`
+          : `synthetic (${fileTag}, seed ${get().seed})`,
         orderbookSnapshots,
         syntheticStats: summarizeTicks(ticks),
         playback: { status: "stopped", index: 0, total: ticks.length, speed: 1, loop: get().playback.loop },
@@ -264,6 +284,11 @@ export const useChartStore = create<ChartStore>((set, get) => ({
   setComponents: (components) => {
     const hasData = get().ticks.length > 0;
     set({ components, dirty: hasData });
+  },
+
+  setPhases: (phases) => {
+    const hasData = get().ticks.length > 0;
+    set({ phases, dirty: hasData });
   },
 
   setSource: (source) => {

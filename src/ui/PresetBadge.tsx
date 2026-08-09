@@ -3,10 +3,20 @@ import { PRESETS, activePresetId } from "./presets";
 
 export function PresetBadge() {
   const components = useChartStore((s) => s.components);
+  const phases = useChartStore((s) => s.phases);
   const seed = useChartStore((s) => s.seed);
 
-  const pid = activePresetId(components);
-  const label = pid === "custom" ? "Custom" : PRESETS[pid].label;
+  const label = phases
+    ? phases
+        .map((p) => {
+          const pid = activePresetId(p.components);
+          return pid === "custom" ? "Custom" : PRESETS[pid].label;
+        })
+        .join(" → ")
+    : (() => {
+        const pid = activePresetId(components);
+        return pid === "custom" ? "Custom" : PRESETS[pid].label;
+      })();
 
   return (
     <div className="preset-badge" title={`Active Market Preset: ${label} · Seed ${seed}`}>

@@ -29,6 +29,20 @@ export const PRESETS: Record<string, PresetDef> = {
       liquidity: { enabled: false, params: { sweepProbability: 0.1, proximity: 0.5, pushScale: 0.1 } },
     },
   },
+  bearTrend: {
+    label: "Bear Trend Sell-off",
+    desc: "Persistent downward drift with heavy selling pressure",
+    // Cermin dari strongTrend, namun lebih landai (strength 0.012 vs 0.025):
+    // drift -0.0072/tick menjaga harga tidak menyentuh floor 0.01 dalam
+    // 7500 tick (cermin simetris mustahil karena floor clamp di generator).
+    config: {
+      noise: { enabled: true, params: { noiseLevel: 0.08 } },
+      trend: { enabled: true, params: { trendStrength: 0.012, trendBias: -0.6 } },
+      volatility: { enabled: true, params: { omega: 0.0003, alpha: 0.08, beta: 0.88, scale: 1 } },
+      "mean-reversion": { enabled: false, params: { strength: 0.01, window: 30 } },
+      liquidity: { enabled: false, params: { sweepProbability: 0.1, proximity: 0.5, pushScale: 0.1 } },
+    },
+  },
   highVolatility: {
     label: "Volatile Shocks",
     desc: "High variance clustering and sharp price spikes",
@@ -60,6 +74,29 @@ export const PRESETS: Record<string, PresetDef> = {
       volatility: { enabled: true, params: { omega: 0.0004, alpha: 0.12, beta: 0.82, scale: 1.2 } },
       "mean-reversion": { enabled: true, params: { strength: 0.02, window: 20 } },
       liquidity: { enabled: true, params: { sweepProbability: 0.35, proximity: 0.7, pushScale: 0.3 } },
+    },
+  },
+  rangeFakeouts: {
+    label: "Ranging with Fakeouts",
+    desc: "Tight horizontal channel with frequent sweeps at the edges",
+    // Channel kuat (MR tinggi, tanpa tren) + dorongan likuiditas di tepi level.
+    config: {
+      noise: { enabled: true, params: { noiseLevel: 0.1 } },
+      trend: { enabled: false, params: { trendStrength: 0, trendBias: 0 } },
+      volatility: { enabled: true, params: { omega: 0.0004, alpha: 0.06, beta: 0.85, scale: 1 } },
+      "mean-reversion": { enabled: true, params: { strength: 0.03, window: 25 } },
+      liquidity: { enabled: true, params: { sweepProbability: 0.35, proximity: 1, pushScale: 0.25 } },
+    },
+  },
+  quiet: {
+    label: "Quiet / Low Volatility",
+    desc: "Minimal noise and variance — flat, low-activity market",
+    config: {
+      noise: { enabled: true, params: { noiseLevel: 0.03 } },
+      trend: { enabled: false, params: { trendStrength: 0.005, trendBias: 0 } },
+      volatility: { enabled: true, params: { omega: 0.0002, alpha: 0.05, beta: 0.85, scale: 0.4 } },
+      "mean-reversion": { enabled: true, params: { strength: 0.01, window: 30 } },
+      liquidity: { enabled: false, params: { sweepProbability: 0.1, proximity: 0.5, pushScale: 0.1 } },
     },
   },
 };

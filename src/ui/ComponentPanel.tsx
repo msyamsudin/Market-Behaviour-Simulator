@@ -61,8 +61,10 @@ const METADATA: Record<string, Meta> = {
 export function ComponentPanel() {
   const {
     components,
+    phases,
     setComponentEnabled,
     setComponentParam,
+    setPhases,
     isLoading,
     dirty,
     error,
@@ -77,6 +79,27 @@ export function ComponentPanel() {
     // Preset = set penuh: salin seluruh config preset, sehingga preset benar-benar
     // sumber kebenaran dan badge preset selalu aktif setelah diterapkan.
     useChartStore.getState().setComponents(cloneComponents(preset.config));
+    useChartStore.getState().setPhases(null);
+  };
+
+  const addPhase = (presetKey: string) => {
+    const preset = PRESETS[presetKey];
+    if (!preset) return;
+    const next = [...(phases ?? []), { components: cloneComponents(preset.config), count: 2500 }];
+    setPhases(next);
+  };
+
+  const removePhase = (index: number) => {
+    const next = [...(phases ?? [])];
+    next.splice(index, 1);
+    setPhases(next.length > 0 ? next : null);
+  };
+
+  const setPhaseCount = (index: number, value: number) => {
+    const count = Number.isFinite(value) ? Math.max(100, Math.round(value)) : 2500;
+    const next = [...(phases ?? [])];
+    next[index] = { ...next[index], count };
+    setPhases(next);
   };
 
   const activeKey = activePresetId(components);
@@ -110,6 +133,69 @@ export function ComponentPanel() {
           })}
         </div>
         <div className="cp-preset-desc">{activeDesc}</div>
+      </div>
+
+      <div className="cp-phases-section">
+        <div className="cp-section-title">Simulation Phases</div>
+        <div className="cp-phases-add-row">
+          {Object.entries(PRESETS).map(([key, p]) => (
+            <button
+              key={key}
+              className="cp-phase-add"
+              onClick={() => addPhase(key)}
+              disabled={isLoading}
+              title={`Append "${p.label}" as a phase`}
+            >
+              + {p.label}
+            </button>
+          ))}
+        </div>
+        {phases && phases.length > 0 ? (
+          <>
+            <div className="cp-phases-list">
+              {phases.map((ph, i) => {
+                const pid = activePresetId(ph.components);
+                const label = pid === "custom" ? "Custom" : PRESETS[pid].label;
+                return (
+                  <div key={i} className="cp-phase-row">
+                    <span className="cp-phase-index">{i + 1}.</span>
+                    <span className="cp-phase-label">{label}</span>
+                    <input
+                      type="number"
+                      min={100}
+                      step={100}
+                      value={ph.count}
+                      onChange={(e) => setPhaseCount(i, parseFloat(e.target.value))}
+                      disabled={isLoading}
+                      className="cp-phase-count"
+                      aria-label={`Ticks for phase ${i + 1}`}
+                    />
+                    <button
+                      className="cp-phase-remove"
+                      onClick={() => removePhase(i)}
+                      disabled={isLoading}
+                      aria-label={`Remove phase ${i + 1}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="cp-phases-footer">
+              <span className="cp-phases-total">
+                Total: {phases.reduce((s, p) => s + p.count, 0).toLocaleString()} ticks
+              </span>
+              <button className="cp-phases-clear" onClick={() => setPhases(null)} disabled={isLoading}>
+                Clear phases
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="cp-phases-empty">
+            Susun urutan rezim (mis. Balanced → Bear → Bull). State engine kontinu melintasi batas fase.
+          </div>
+        )}
       </div>
 
       <div className="cp-cards-list">

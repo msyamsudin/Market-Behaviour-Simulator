@@ -2,7 +2,7 @@ import type { OrderBookSnapshot, Trade } from "../../types/orderbook";
 import type { Tick } from "../../types/tick";
 import { ComponentTickHarness } from "../tick/component-harness";
 import { OrderBookEngine } from "./orderbook";
-import type { ActiveComponent } from "../tick/component-tick-generator";
+import type { ActiveComponent, ComponentPhase } from "../tick/component-tick-generator";
 
 export interface OrderBookTickGeneratorParams {
   seed: number;
@@ -20,6 +20,12 @@ export interface OrderBookTickGeneratorParams {
   /** Timeframe candle (detik) untuk riwayat yang dilihat komponen. */
   tfSeconds?: number;
   components: ActiveComponent[];
+  /**
+   * Urutan fase (opsional). Saat ada, menggantikan `count`/`components`
+   * tunggal. Komponen ditukar di batas fase; book LOB, mid, stream rng, dan
+   * riwayat candle tetap kontinu (likuiditas resting terbawa antar rezim).
+   */
+  phases?: ComponentPhase[];
 }
 
 export interface OrderBookGenerationResult {
@@ -54,7 +60,11 @@ function tradePrice(trades: Trade[]): { price: number; volume: number } {
  * arsitektur komponen yang sudah ada (A/B seed) tetap berlaku.
  */
 export function generateOrderbookTicks(params: OrderBookTickGeneratorParams): OrderBookGenerationResult {
-  const harness = new ComponentTickHarness(params.seed, params.tfSeconds, params.components);
+  const phases =
+    params.phases && params.phases.length > 0
+      ? params.phases
+      : [{ count: params.count, components: params.components }];
+  const harness = new ComponentTickHarness(params.seed, params.tfSeconds, phases[0].components);
   const rng = harness.rng;
   const book = new OrderBookEngine();
   const step = Math.max(params.spread, 1e-6);
@@ -65,73 +75,78 @@ export function generateOrderbookTicks(params: OrderBookTickGeneratorParams): Or
   let lastSide: "buy" | "sell" | null = null;
   const ticks: Tick[] = [];
   const snapshots: OrderBookSnapshot[] = [];
+  let tickIndex = 0;
 
-  for (let i = 0; i < params.count; i++) {
-    const tickTime = params.startTime + i * params.tickIntervalSeconds;
+  for (const phase of phases) {
+    harness.setComponents(phase.components);
+    for (let i = 0; i < phase.count; i++) {
+      const tickTime = params.startTime + tickIndex * params.tickIntervalSeconds;
 
-    // Order arrival (passive flow): limit order masuk di sekitar harga terbaik,
-    // ukuran acak. Menggabung ke antrian yang sudah ada, bukan merombak.
-    const arrivalCount = 1 + (rng() < 0.5 ? 1 : 0);
-    for (let k = 0; k < arrivalCount; k++) {
-      const side: "bid" | "ask" = rng() < 0.5 ? "bid" : "ask";
-      const offset = 1 + Math.floor(rng() * 3);
-      const size = 1 + Math.floor(rng() * params.depthSize);
-      const anchor = side === "bid" ? book.bestAsk() : book.bestBid();
-      book.addLimit(side, (anchor ?? mid) + (side === "bid" ? -1 : 1) * step * offset, size);
+      // Order arrival (passive flow): limit order masuk di sekitar harga terbaik,
+      // ukuran acak. Menggabung ke antrian yang sudah ada, bukan merombak.
+      const arrivalCount = 1 + (rng() < 0.5 ? 1 : 0);
+      for (let k = 0; k < arrivalCount; k++) {
+        const side: "bid" | "ask" = rng() < 0.5 ? "bid" : "ask";
+        const offset = 1 + Math.floor(rng() * 3);
+        const size = 1 + Math.floor(rng() * params.depthSize);
+        const anchor = side === "bid" ? book.bestAsk() : book.bestBid();
+        book.addLimit(side, (anchor ?? mid) + (side === "bid" ? -1 : 1) * step * offset, size);
+      }
+
+      // Order cancellation: sesekali kurangi sebagian antrian acak.
+      if (rng() < 0.25) {
+        book.cancelRandom(rng() < 0.5 ? "bid" : "ask", rng, 0.3);
+      }
+
+      const bias = harness.biasAt(mid, tickTime);
+      const spread = book.spread() || step;
+      const aggress = clamp(bias / (2 * spread), -1, 1);
+
+      let mktSide: "bid" | "ask";
+      let mktSize: number;
+      if (Math.abs(aggress) < 0.05) {
+        // Bias netral → agresor acak dua arah (noise / sideways).
+        mktSide = rng() < 0.5 ? "bid" : "ask";
+        mktSize = 1 + Math.floor(rng() * params.baseVolume);
+      } else {
+        mktSide = aggress > 0 ? "bid" : "ask";
+        const scale = 0.4 + Math.abs(aggress) * 1.6;
+        mktSize = 1 + Math.floor(params.baseVolume * scale * (0.5 + rng()));
+      }
+
+      // Jaga book tetap sehat sebelum matching (tidak boleh kosong).
+      book.maintain(step, depth, params.depthSize, rng);
+
+      const trades = book.market(mktSide, mktSize);
+      const { price: tradePx, volume } = tradePrice(trades);
+
+      let price = mid;
+      let vol = 1;
+      if (volume > 0) {
+        price = tradePx;
+        vol = Math.max(1, Math.round(volume));
+        lastSide = mktSide === "bid" ? "buy" : "sell";
+        lastPrice = Math.round(price * 100) / 100;
+      }
+
+      const tick: Tick = {
+        time: tickTime,
+        price: Math.round(price * 100) / 100,
+        volume: vol,
+        side: mktSide === "bid" ? "buy" : "sell",
+      };
+      ticks.push(tick);
+
+      // Refill depth setelah konsumsi (market maker menambah likuiditas).
+      book.maintain(step, depth, params.depthSize, rng);
+
+      snapshots.push(book.snapshot(tickTime, 12, lastPrice, lastSide, trades));
+
+      mid = book.mid() ?? tick.price;
+
+      harness.push(tick);
+      tickIndex++;
     }
-
-    // Order cancellation: sesekali kurangi sebagian antrian acak.
-    if (rng() < 0.25) {
-      book.cancelRandom(rng() < 0.5 ? "bid" : "ask", rng, 0.3);
-    }
-
-    const bias = harness.biasAt(mid, tickTime);
-    const spread = book.spread() || step;
-    const aggress = clamp(bias / (2 * spread), -1, 1);
-
-    let mktSide: "bid" | "ask";
-    let mktSize: number;
-    if (Math.abs(aggress) < 0.05) {
-      // Bias netral → agresor acak dua arah (noise / sideways).
-      mktSide = rng() < 0.5 ? "bid" : "ask";
-      mktSize = 1 + Math.floor(rng() * params.baseVolume);
-    } else {
-      mktSide = aggress > 0 ? "bid" : "ask";
-      const scale = 0.4 + Math.abs(aggress) * 1.6;
-      mktSize = 1 + Math.floor(params.baseVolume * scale * (0.5 + rng()));
-    }
-
-    // Jaga book tetap sehat sebelum matching (tidak boleh kosong).
-    book.maintain(step, depth, params.depthSize, rng);
-
-    const trades = book.market(mktSide, mktSize);
-    const { price: tradePx, volume } = tradePrice(trades);
-
-    let price = mid;
-    let vol = 1;
-    if (volume > 0) {
-      price = tradePx;
-      vol = Math.max(1, Math.round(volume));
-      lastSide = mktSide === "bid" ? "buy" : "sell";
-      lastPrice = Math.round(price * 100) / 100;
-    }
-
-    const tick: Tick = {
-      time: tickTime,
-      price: Math.round(price * 100) / 100,
-      volume: vol,
-      side: mktSide === "bid" ? "buy" : "sell",
-    };
-    ticks.push(tick);
-
-    // Refill depth setelah konsumsi (market maker menambah likuiditas).
-    book.maintain(step, depth, params.depthSize, rng);
-
-    snapshots.push(book.snapshot(tickTime, 12, lastPrice, lastSide, trades));
-
-    mid = book.mid() ?? tick.price;
-
-    harness.push(tick);
   }
 
   return { ticks, snapshots };

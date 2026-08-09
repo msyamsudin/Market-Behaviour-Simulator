@@ -20,13 +20,22 @@ const MAX_HISTORY = 200;
 export class ComponentTickHarness {
   readonly rng: () => number;
   private readonly aggregator: IncrementalCandleAggregator;
-  private readonly components: ActiveComponent[];
+  private components: ActiveComponent[];
   private history: Candle[] = [];
   private lastTotalDelta = 0;
 
   constructor(seed: number, tfSeconds: number | undefined, components: ActiveComponent[]) {
     this.rng = mulberry32(seed);
     this.aggregator = new IncrementalCandleAggregator(tfSeconds ?? 60);
+    this.components = components;
+  }
+
+  /**
+   * Ganti set komponen aktif (untuk simulasi multi-fase). Stream rng, riwayat
+   * candle, dan lastTotalDelta tetap kontinu — state komponen yang bertahan
+   * (variance GARCH, tracker likuiditas) ikut terbawa ke fase berikutnya.
+   */
+  setComponents(components: ActiveComponent[]): void {
     this.components = components;
   }
 

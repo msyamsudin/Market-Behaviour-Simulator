@@ -70,7 +70,8 @@ body,
 }
 
 .topbar-left {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .topbar-center {
@@ -127,6 +128,7 @@ body,
   color: var(--text-muted);
   font-weight: 500;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .preset-dot {
@@ -139,6 +141,11 @@ body,
 
 .preset-name {
   color: var(--text-main);
+  /* Urutan fase bisa panjang; truncate dengan ellipsis, label penuh di tooltip. */
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .preset-seed {
@@ -810,6 +817,126 @@ body,
 }
 
 .cp-preset-desc {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  padding: 6px 8px;
+  background-color: var(--bg-panel);
+  border: 1px dashed var(--border-color);
+  border-radius: 6px;
+}
+
+.cp-phases-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cp-phases-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cp-phase-add {
+  background-color: var(--bg-card);
+  color: var(--accent-blue);
+  border: 1px dashed var(--border-light);
+  border-radius: 10px;
+  padding: 3px 8px;
+  font-size: 9px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cp-phase-add:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  border-color: var(--accent-blue);
+}
+
+.cp-phases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cp-phase-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.cp-phase-index {
+  font-size: 10px;
+  color: var(--text-muted);
+  min-width: 14px;
+}
+
+.cp-phase-label {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.cp-phase-count {
+  width: 72px;
+  background-color: var(--bg-panel);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 10px;
+  text-align: right;
+}
+
+.cp-phase-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.cp-phase-remove:hover:not(:disabled) {
+  color: #ff5a5a;
+}
+
+.cp-phases-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cp-phases-total {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.cp-phases-clear {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 9px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.cp-phases-clear:hover:not(:disabled) {
+  color: #ff5a5a;
+  border-color: #ff5a5a;
+}
+
+.cp-phases-empty {
   font-size: 10px;
   line-height: 1.5;
   color: var(--text-muted);

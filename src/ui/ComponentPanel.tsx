@@ -1,4 +1,4 @@
-import { useChartStore, type ComponentConfig } from "../app/chartStore";
+import { useChartStore, cloneComponents } from "../app/chartStore";
 import { PRESETS, activePresetId } from "./presets";
 
 interface Meta {
@@ -74,13 +74,14 @@ export function ComponentPanel() {
   const applyPreset = (presetKey: string) => {
     const preset = PRESETS[presetKey];
     if (!preset) return;
-    const current = useChartStore.getState().components;
-    const next: Record<string, ComponentConfig> = { ...current };
-    for (const [id, cfg] of Object.entries(preset.config)) {
-      next[id] = { enabled: cfg.enabled, params: { ...cfg.params } };
-    }
-    useChartStore.getState().setComponents(next);
+    // Preset = set penuh: salin seluruh config preset, sehingga preset benar-benar
+    // sumber kebenaran dan badge preset selalu aktif setelah diterapkan.
+    useChartStore.getState().setComponents(cloneComponents(preset.config));
   };
+
+  const activeKey = activePresetId(components);
+  const activeDesc =
+    activeKey === "custom" ? "Konfigurasi komponen diedit manual, tidak sesuai preset mana pun." : PRESETS[activeKey].desc;
 
   return (
     <div className="component-panel-container">
@@ -88,7 +89,7 @@ export function ComponentPanel() {
         <div className="cp-section-title">Market Presets</div>
         <div className="cp-presets-grid">
           {Object.entries(PRESETS).map(([key, p]) => {
-            const active = activePresetId(components) === key;
+            const active = activeKey === key;
             return (
               <button
                 key={key}
@@ -108,12 +109,7 @@ export function ComponentPanel() {
             );
           })}
         </div>
-        {(() => {
-          const activeKey = activePresetId(components);
-          const activeDesc =
-            activeKey === "custom" ? "Konfigurasi komponen diedit manual, tidak sesuai preset mana pun." : PRESETS[activeKey].desc;
-          return <div className="cp-preset-desc">{activeDesc}</div>;
-        })()}
+        <div className="cp-preset-desc">{activeDesc}</div>
       </div>
 
       <div className="cp-cards-list">

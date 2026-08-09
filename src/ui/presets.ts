@@ -1,4 +1,4 @@
-import { DEFAULT_COMPONENTS, type ComponentConfig } from "../app/chartStore";
+import { DEFAULT_COMPONENTS, cloneComponents, type ComponentConfig } from "../app/chartStore";
 
 export interface PresetDef {
   label: string;
@@ -14,8 +14,9 @@ export const PRESETS: Record<string, PresetDef> = {
   default: {
     label: "Balanced Market",
     desc: "Standard market simulation with moderate trend and volatility",
-    // Sumber kebenaran tunggal: DEFAULT_COMPONENTS di chartStore.
-    config: DEFAULT_COMPONENTS,
+    // Sumber kebenaran tunggal: DEFAULT_COMPONENTS di chartStore (disalin agar
+    // referensi preset tidak sama dengan objek yang dipegang store).
+    config: cloneComponents(DEFAULT_COMPONENTS),
   },
   strongTrend: {
     label: "Bull Trend Rally",
@@ -77,10 +78,15 @@ function configEquals(a: ComponentConfig | undefined, b: ComponentConfig | undef
 /**
  * Tentukan preset aktif dari konfigurasi komponen saat ini. Jika tidak cocok
  * dengan preset mana pun (karena diedit manual), kembali ke "custom".
+ *
+ * Pencocokan dua arah: key set harus identik (bukan hanya preset ⊆ komponen),
+ * sehingga komponen tambahan di state membuat status "custom", bukan preset.
  */
 export function activePresetId(components: Record<string, ComponentConfig>): string | "custom" {
+  const currentIds = Object.keys(components);
   for (const [key, preset] of Object.entries(PRESETS)) {
     const presetIds = Object.keys(preset.config);
+    if (presetIds.length !== currentIds.length) continue;
     const matches = presetIds.every((id) => configEquals(components[id], preset.config[id]));
     if (matches) return key;
   }

@@ -36,6 +36,16 @@ export const DEFAULT_COMPONENTS: Record<string, ComponentConfig> = {
   liquidity: { enabled: false, params: { sweepProbability: 0.15, proximity: 0.5, pushScale: 0.15 } },
 };
 
+/** Salin config komponen (params hanya berisi number, salin dangkal cukup). */
+export function cloneComponentConfig(cfg: ComponentConfig): ComponentConfig {
+  return { enabled: cfg.enabled, params: { ...cfg.params } };
+}
+
+/** Salin seluruh set komponen agar tidak ada referensi bersama antar pemakai. */
+export function cloneComponents(components: Record<string, ComponentConfig>): Record<string, ComponentConfig> {
+  return Object.fromEntries(Object.entries(components).map(([id, cfg]) => [id, cloneComponentConfig(cfg)]));
+}
+
 // PlaybackState diekspor dari engine dan dipakai ulang di store agar tidak ada
 // dua definisi interface yang menyimpang (mis. `loop` hanya ada di engine).
 
@@ -163,7 +173,7 @@ export const useChartStore = create<ChartStore>((set, get) => ({
   renkoBricks: [],
   fullRenkoBricks: [],
   bottomPane: "candle",
-  components: DEFAULT_COMPONENTS,
+  components: cloneComponents(DEFAULT_COMPONENTS),
   seed: 42,
   source: "orderbook",
   obSpread: 0.02,

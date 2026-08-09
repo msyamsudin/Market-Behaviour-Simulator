@@ -74,6 +74,8 @@ interface ChartStore {
   playback: PlaybackState;
   /** Penghitung generasi regenerasi (bukan reaktif, hanya state transien). */
   _loadGeneration: number;
+  /** Revisi data penuh. Naik setiap regenerasi; dipakai chart agar tampil penuh. */
+  dataRevision: number;
   loadSynthetic: () => Promise<void>;
   setSource: (source: TickSourceMode) => void;
   setOrderbookParam: (key: "obSpread" | "obDepth" | "obDepthSize", value: number) => void;
@@ -176,6 +178,7 @@ export const useChartStore = create<ChartStore>((set, get) => ({
   error: null,
   playback: { status: "stopped", index: 0, total: 0, speed: 1, loop: false },
   _loadGeneration: 0,
+  dataRevision: 0,
 
   loadSynthetic: async () => {
     const gen = get()._loadGeneration + 1;
@@ -240,6 +243,7 @@ export const useChartStore = create<ChartStore>((set, get) => ({
         playback: { status: "stopped", index: 0, total: ticks.length, speed: 1, loop: get().playback.loop },
         dirty: false,
         isLoading: false,
+        dataRevision: get().dataRevision + 1,
       });
     } catch (err) {
       if (gen !== get()._loadGeneration) return;
@@ -402,9 +406,22 @@ export function initPlaybackBridge(): () => void {
       const ltfAdd = (batch.candlesByTimeframe[LTF_ID] ?? []) as Candle[];
       const renkoAdd = (batch.candlesByTimeframe["renko"] ?? []) as Brick[];
       const hasReset = batch.index === 0 && Object.keys(batch.candlesByTimeframe).length === 0;
-      const htfCandles = hasReset ? [] : mergeByTime(s.htfCandles, htfAdd);
-      const ltfCandles = hasReset ? [] : mergeByTime(s.ltfCandles, ltfAdd);
-      const renkoBricks = hasReset ? [] : [...s.renkoBricks, ...renkoAdd];
+      // Reset worker hanya boleh mengosongkan tampilan jika chart sedang dalam
+      // kondisi parsial (playback) atau playback loop sedang restart. Jika store
+      // sudah mengisi data penuh (setelah load/regenerate/stop/setHtf/setBrickSize,
+      // status "stopped"), reset tidak boleh menyembunyikan candle yang sengaja
+      // ditampilkan utuh.
+      const showingFull =
+        s.htfCandles.length === s.fullHtfCandles.length &&
+        s.htfCandles.every((c, i) => s.fullHtfCandles[i]?.time === c.time);
+      const clearOnReset = hasReset && (s.playback.status === "playing" || !showingFull);
+      const htfCandles = clearOnReset ? [] : hasReset ? s.htfCandles : mergeByTime(s.htfCandles, htfAdd);
+      const ltfCandles = clearOnReset ? [] : hasReset ? s.ltfCandles : mergeByTime(s.ltfCandles, ltfAdd);
+      const renkoBricks = clearOnReset
+        ? []
+        : hasReset
+          ? s.renkoBricks
+          : [...s.renkoBricks, ...renkoAdd];
       return {
         htfCandles,
         ltfCandles,

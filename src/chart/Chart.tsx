@@ -19,6 +19,8 @@ interface ChartProps {
   data: Candle[];
   title?: string;
   overlay?: { values: (number | null)[]; color?: string };
+  /** Naikkan nilai ini saat data di-reload penuh agar chart menampilkan seluruh candle. */
+  dataRevision?: number;
   onCrosshairMove?: (price: number, time: UTCTimestamp) => void;
   onCrosshairLeave?: () => void;
   onVisibleRangeChange?: (range: LogicalRange) => void;
@@ -44,7 +46,7 @@ function toSeriesData(candles: Candle[]): CandlestickData<UTCTimestamp>[] {
 }
 
 export const Chart = forwardRef<ChartHandle, ChartProps>(function Chart(
-  { data, title, overlay, onCrosshairMove, onCrosshairLeave, onVisibleRangeChange },
+  { data, title, overlay, dataRevision, onCrosshairMove, onCrosshairLeave, onVisibleRangeChange },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -53,6 +55,7 @@ export const Chart = forwardRef<ChartHandle, ChartProps>(function Chart(
   const overlayRef = useRef<ISeriesApi<"Line"> | null>(null);
   const dataRef = useRef<Candle[]>([]);
   const savedRangeRef = useRef<LogicalRange | null>(null);
+  const revisionRef = useRef<number>(dataRevision ?? 0);
   const propsRef = useRef({ onCrosshairMove, onCrosshairLeave, onVisibleRangeChange });
   propsRef.current = { onCrosshairMove, onCrosshairLeave, onVisibleRangeChange };
 
@@ -174,21 +177,28 @@ export const Chart = forwardRef<ChartHandle, ChartProps>(function Chart(
     const prev = dataRef.current;
     dataRef.current = data;
     series.setData(toSeriesData(data));
-    if (chartRef.current) {
-      const isExtension =
-        prev.length > 0 &&
-        data.length >= prev.length &&
-        prev.every((c, i) => data[i].time === c.time);
-      if (!isExtension) {
-        const saved = savedRangeRef.current;
-        if (saved) {
-          chartRef.current.timeScale().setVisibleLogicalRange(saved);
-        } else {
-          chartRef.current.timeScale().fitContent();
-        }
+    if (!chartRef.current) return;
+    const isReset = dataRevision !== undefined && dataRevision !== revisionRef.current;
+    revisionRef.current = dataRevision ?? revisionRef.current;
+    if (isReset) {
+      // Regenerasi penuh: hapus range tersimpan dan tampilkan seluruh candle.
+      savedRangeRef.current = null;
+      chartRef.current.timeScale().fitContent();
+      return;
+    }
+    const isExtension =
+      prev.length > 0 &&
+      data.length >= prev.length &&
+      prev.every((c, i) => data[i].time === c.time);
+    if (!isExtension) {
+      const saved = savedRangeRef.current;
+      if (saved) {
+        chartRef.current.timeScale().setVisibleLogicalRange(saved);
+      } else {
+        chartRef.current.timeScale().fitContent();
       }
     }
-  }, [data]);
+  }, [data, dataRevision]);
 
   useEffect(() => {
     const line = overlayRef.current;

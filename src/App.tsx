@@ -17,6 +17,7 @@ function App() {
   const indicatorValues = useChartStore((s) => s.indicatorValues);
   const indicatorId = useChartStore((s) => s.indicatorId);
   const error = useChartStore((s) => s.error);
+  const dataRevision = useChartStore((s) => s.dataRevision);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<SideDrawerTab>("components");
@@ -30,15 +31,6 @@ function App() {
   const bottomData = bottomPane === "renko" ? renkoBricks.map(brickToCandle) : ltfCandles;
   const bottomTitle = bottomPane === "renko" ? `Renko · brick ${brickSize}` : "1s candles";
 
-  const handleToggleDrawer = (tab: SideDrawerTab) => {
-    if (drawerOpen && activeTab === tab) {
-      setDrawerOpen(false);
-    } else {
-      setDrawerOpen(true);
-      setActiveTab(tab);
-    }
-  };
-
   return (
     <main className="app">
       {error && (
@@ -48,11 +40,7 @@ function App() {
         </div>
       )}
 
-      <TopBar
-        drawerOpen={drawerOpen}
-        activeTab={activeTab}
-        onToggleDrawer={handleToggleDrawer}
-      />
+      <TopBar />
 
       <div className="app-workspace">
         <div className="chart-view-area">
@@ -81,6 +69,7 @@ function App() {
             htfTitle={`${htfId} candles${indicatorId ? ` · ${indicatorId.toUpperCase()}` : ""}`}
             ltfTitle={bottomTitle}
             htfOverlay={{ values: indicatorValues, color: "#2962ff" }}
+            dataRevision={dataRevision}
           />
 
           {bottomPane === "orderbook" && <OrderBookPanel />}

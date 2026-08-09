@@ -9,6 +9,7 @@ interface SyncChartsProps {
   htfTitle: string;
   ltfTitle: string;
   htfOverlay?: { values: (number | null)[]; color?: string };
+  dataRevision?: number;
 }
 
 /**
@@ -17,7 +18,7 @@ interface SyncChartsProps {
  * Guard `syncing` mencegah feedback loop saat posisi crosshair diterapkan
  * dari chart satu ke chart lain.
  */
-export function SyncCharts({ htfData, ltfData, htfTitle, ltfTitle, htfOverlay }: SyncChartsProps) {
+export function SyncCharts({ htfData, ltfData, htfTitle, ltfTitle, htfOverlay, dataRevision }: SyncChartsProps) {
   const topRef = useRef<ChartHandle>(null);
   const bottomRef = useRef<ChartHandle>(null);
   const syncing = useRef(false);
@@ -46,9 +47,10 @@ export function SyncCharts({ htfData, ltfData, htfTitle, ltfTitle, htfOverlay }:
         data={htfData}
         title={htfTitle}
         overlay={htfOverlay}
+        dataRevision={dataRevision}
         {...syncCallbacks(bottomRef)}
       />
-      <Chart ref={bottomRef} data={ltfData} title={ltfTitle} {...syncCallbacks(topRef)} />
+      <Chart ref={bottomRef} data={ltfData} title={ltfTitle} dataRevision={dataRevision} {...syncCallbacks(topRef)} />
     </div>
   );
 }

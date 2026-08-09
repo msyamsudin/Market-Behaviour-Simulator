@@ -1,0 +1,58 @@
+:root {
+  color-scheme: dark;
+  background-color: #0c0e14;
+  --bg-dark: #0c0e14;
+  --bg-panel: #131722;
+  --bg-card: #1e222d;
+  --bg-hover: #2a2e39;
+  --border-color: #2a2e39;
+  --border-light: #363c4e;
+  --accent-blue: #2962ff;
+  --accent-blue-hover: #3b72ff;
+  --accent-green: #089981;
+  --accent-red: #f23645;
+  --text-main: #d1d4dc;
+  --text-muted: #787b86;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, SF Pro Mono, Menlo, Monaco, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+}
+
+/* Global error banner (error di luar drawer tetap terlihat) */
+.app-error-banner {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  background-color: rgba(242, 54, 69, 0.12);
+  color: #f8d3d6;
+  border-bottom: 1px solid rgba(242, 54, 69, 0.4);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

@@ -1,5 +1,6 @@
 import { ComponentPanel } from "./ComponentPanel";
 import { StatisticsPanel } from "./StatisticsPanel";
+import "../styles/drawer.css";
 
 export type SideDrawerTab = "components" | "stats";
 

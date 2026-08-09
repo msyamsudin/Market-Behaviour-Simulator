@@ -1,4 +1,5 @@
 import { useChartStore } from "../app/chartStore";
+import "../styles/statistics-panel.css";
 
 export function StatisticsPanel() {
   const stats = useChartStore((s) => s.syntheticStats);

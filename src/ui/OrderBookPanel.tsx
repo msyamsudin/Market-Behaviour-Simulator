@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useChartStore } from "../app/chartStore";
 import type { OrderBookLevel, OrderBookSnapshot } from "../types/orderbook";
+import "../styles/orderbook.css";
 
 function maxSize(snapshot: OrderBookSnapshot | null): number {
   if (!snapshot) return 1;

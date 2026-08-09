@@ -1,5 +1,6 @@
 import { useChartStore, cloneComponents } from "../app/chartStore";
 import { PRESETS, activePresetId } from "./presets";
+import "../styles/component-panel.css";
 
 interface Meta {
   title: string;

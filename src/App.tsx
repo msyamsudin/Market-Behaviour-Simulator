@@ -5,7 +5,8 @@ import { SideDrawer, type SideDrawerTab } from "./ui/SideDrawer";
 import { TopBar } from "./ui/TopBar";
 import { OrderBookPanel } from "./ui/OrderBookPanel";
 import { brickToCandle } from "./utils/brick-to-candle";
-import "./App.css";
+import "./styles/base.css";
+import "./styles/chart.css";
 
 function App() {
   const htfCandles = useChartStore((s) => s.htfCandles);

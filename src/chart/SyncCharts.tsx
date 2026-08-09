@@ -2,6 +2,7 @@ import { useRef } from "react";
 import type { UTCTimestamp } from "lightweight-charts";
 import type { Candle } from "../types/candle";
 import { Chart, type ChartHandle } from "../chart/Chart";
+import "../styles/chart.css";
 
 interface SyncChartsProps {
   htfData: Candle[];

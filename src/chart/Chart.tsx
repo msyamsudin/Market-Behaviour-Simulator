@@ -14,6 +14,7 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import type { Candle } from "../types/candle";
+import "../styles/chart.css";
 
 interface ChartProps {
   data: Candle[];

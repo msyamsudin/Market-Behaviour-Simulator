@@ -114,32 +114,6 @@ body,
   white-space: nowrap;
 }
 
-/* Session Badge */
-.session-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  font-size: 11px;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-.session-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--accent-green);
-  box-shadow: 0 0 6px var(--accent-green);
-}
-
-.session-name {
-  color: var(--text-main);
-}
-
 /* Control Groups & Segmented Controls */
 .control-group-label {
   font-size: 11px;

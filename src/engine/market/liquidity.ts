@@ -83,7 +83,7 @@ export class LiquidityComponent implements TickComponent {
     this.params = { sweepProbability: 0.15, proximity: 0.5, pushScale: 0.1, ...params };
   }
 
-  next(ctx: { price: number; rng: () => number; history: Candle[]; session?: { volatility: number; liquidity: number; noise: number }; lastTotalDelta: number }): number {
+  next(ctx: { price: number; rng: () => number; history: Candle[]; lastTotalDelta: number }): number {
     this.tracker.update(ctx.history, this.params.proximity);
     const price = ctx.price;
     const { prevHigh, prevLow } = this.tracker;
@@ -91,9 +91,8 @@ export class LiquidityComponent implements TickComponent {
     const nearLow = prevLow !== null && price <= prevLow + this.params.proximity;
     if (!nearHigh && !nearLow) return 0;
     if (this.localRng() >= this.params.sweepProbability) return 0;
-    const liquidityScale = ctx.session?.liquidity ?? 1;
-    if (nearHigh) return (prevHigh! - price + this.params.pushScale) * liquidityScale;
-    return (prevLow! - price - this.params.pushScale) * liquidityScale;
+    if (nearHigh) return prevHigh! - price + this.params.pushScale;
+    return prevLow! - price - this.params.pushScale;
   }
 }
 

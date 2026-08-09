@@ -25,7 +25,7 @@ function lastCloses(candles: Candle[], window: number): number[] {
   return out;
 }
 
-/** Random walk murni, diskalakan multiplier noise sesi. */
+/** Random walk murni. */
 export class NoiseComponent implements TickComponent {
   readonly id = "noise";
   readonly params: ComponentParams;
@@ -33,8 +33,7 @@ export class NoiseComponent implements TickComponent {
     this.params = withDefaults({ noiseLevel: 0.1 }, params);
   }
   next(ctx: ComponentContext): number {
-    const sessionScale = ctx.session?.noise ?? 1;
-    return this.params.noiseLevel * sessionScale * randomNormal(ctx.rng);
+    return this.params.noiseLevel * randomNormal(ctx.rng);
   }
 }
 
@@ -79,8 +78,7 @@ export class VolatilityComponent implements TickComponent {
       this.params.omega + this.params.alpha * shock * shock + this.params.beta * this.sigma2,
     );
     const sigma = Math.sqrt(this.sigma2);
-    const sessionScale = ctx.session?.volatility ?? 1;
-    return this.params.scale * sessionScale * sigma * randomNormal(ctx.rng);
+    return this.params.scale * sigma * randomNormal(ctx.rng);
   }
 }
 

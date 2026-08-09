@@ -1,7 +1,6 @@
 import type { Candle } from "../../types/candle";
 import type { Tick } from "../../types/tick";
 import { IncrementalCandleAggregator } from "../candle/incremental-aggregator";
-import { sessionAt, type SessionMultipliers } from "../market/session";
 import { mulberry32 } from "../../utils/rng";
 import type { ActiveComponent } from "./component-tick-generator";
 
@@ -32,19 +31,16 @@ export class ComponentTickHarness {
   }
 
   /** Total delta semua komponen aktif pada harga & waktu tick tertentu. */
-  biasAt(price: number, tickTime: number): number {
-    const session = sessionAt(tickTime);
+  biasAt(price: number, _tickTime: number): number {
     const ctx: {
       price: number;
       rng: () => number;
       history: Candle[];
-      session?: SessionMultipliers;
       lastTotalDelta: number;
     } = {
       price,
       rng: this.rng,
       history: this.history,
-      session: session.multipliers,
       lastTotalDelta: this.lastTotalDelta,
     };
     let bias = 0;

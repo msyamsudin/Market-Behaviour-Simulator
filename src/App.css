@@ -395,6 +395,97 @@ body,
   cursor: not-allowed;
 }
 
+.pb-seed-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pb-number-input {
+  width: 60px;
+  height: 22px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-main);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  padding: 0 4px;
+  text-align: right;
+  outline: none;
+}
+
+.pb-number-input:focus {
+  border-color: var(--accent-blue);
+}
+
+.pb-number-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pb-seed-random-btn {
+  height: 22px;
+  width: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-main);
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background-color 0.15s ease;
+}
+
+.pb-seed-random-btn:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+}
+
+.pb-seed-random-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pb-regen-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  background-color: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pb-regen-btn:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  color: var(--text-main);
+  border-color: var(--border-light);
+}
+
+.pb-regen-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pb-regen-btn.is-dirty {
+  background-color: var(--accent-blue);
+  color: #ffffff;
+  border-color: var(--accent-blue);
+}
+
+.pb-regen-btn.is-dirty:hover:not(:disabled) {
+  background-color: var(--accent-blue-hover);
+}
+
 /* Global error banner (error di luar drawer tetap terlihat) */
 .app-error-banner {
   flex: 0 0 auto;

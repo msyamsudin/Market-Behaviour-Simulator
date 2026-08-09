@@ -115,8 +115,6 @@ export function ComponentPanel() {
     components,
     setComponentEnabled,
     setComponentParam,
-    setSeed,
-    loadSynthetic,
     isLoading,
     dirty,
     error,
@@ -233,33 +231,6 @@ export function ComponentPanel() {
       </div>
 
       <div className="cp-footer-actions">
-        <div className="cp-seed-row">
-          <div className="cp-param-info">
-            <span className="cp-param-label">Seed</span>
-            <span className="cp-param-value">{seed}</span>
-          </div>
-          <div className="cp-seed-controls">
-            <input
-              type="number"
-              min={0}
-              step={1}
-              value={seed}
-              onChange={(e) => setSeed(parseInt(e.target.value, 10))}
-              className="cp-number-input"
-              title="Seed PRNG. Nilai yang sama + konfigurasi sama menghasilkan seri identik."
-            />
-            <button
-              type="button"
-              className="cp-seed-random-btn"
-              onClick={() => setSeed(Math.floor(Math.random() * 2 ** 32))}
-              disabled={isLoading}
-              title="Acak seed untuk variasi baru"
-            >
-              🎲
-            </button>
-          </div>
-        </div>
-
         {seed === 0 && (
           <div className="cp-status cp-status-warn" role="status">
             Seed 0 menghasilkan pergerakan yang sangat monoton (bukan variasi).
@@ -275,28 +246,9 @@ export function ComponentPanel() {
         {dirty && !isLoading && (
           <div className="cp-status cp-status-dirty" role="status">
             <span className="cp-status-dot" />
-            Konfigurasi berubah — klik "Re-generate Ticks" untuk menerapkan ke chart.
+            Konfigurasi berubah — klik "Re-generate" di header untuk menerapkan ke chart.
           </div>
         )}
-
-        <button
-          className={`cp-reload-btn ${dirty ? "is-dirty" : ""}`}
-          onClick={() => void loadSynthetic()}
-          disabled={isLoading}
-          title={dirty ? "Menerapkan konfigurasi saat ini ke data" : "Membuat ulang data sintetis"}
-        >
-          {isLoading ? (
-            <>Generating Ticks...</>
-          ) : (
-            <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21.5 2v6h-6M2.5 22v-6h6" />
-                <path d="M2 11.5a10 10 0 0 1 18.8-4.3L21.5 8M22 12.5a10 10 0 0 1-18.8 4.2L2.5 16" />
-              </svg>
-              {dirty ? "Terapkan & Re-generate Ticks (7,500)" : "Re-generate Ticks (7,500)"}
-            </>
-          )}
-        </button>
 
         {!isLoading && tickCount > 0 && (
           <div className="cp-ready-note">

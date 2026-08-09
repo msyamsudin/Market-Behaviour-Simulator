@@ -1,6 +1,7 @@
 import { IndicatorSelector } from "./IndicatorSelector";
 import { PaneSelector } from "./PaneSelector";
 import { PlaybackControls } from "./PlaybackControls";
+import { PresetBadge } from "./PresetBadge";
 
 import { TimeframeSelector } from "./TimeframeSelector";
 
@@ -15,6 +16,7 @@ export function TopBar() {
           </svg>
           <span className="brand-title">Market Simulator</span>
         </div>
+        <PresetBadge />
       </div>
 
       <div className="topbar-center">

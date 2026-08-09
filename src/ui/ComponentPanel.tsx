@@ -1,4 +1,5 @@
-import { useChartStore, DEFAULT_COMPONENTS, type ComponentConfig } from "../app/chartStore";
+import { useChartStore, type ComponentConfig } from "../app/chartStore";
+import { PRESETS } from "./presets";
 
 interface Meta {
   title: string;
@@ -53,59 +54,6 @@ const METADATA: Record<string, Meta> = {
       sweepProbability: { label: "Sweep Prob.", min: 0, max: 0.5, step: 0.05 },
       proximity: { label: "Proximity Range", min: 0.1, max: 2, step: 0.1 },
       pushScale: { label: "Push Scale", min: 0.05, max: 0.5, step: 0.05 },
-    },
-  },
-};
-
-const PRESETS: Record<string, { label: string; desc: string; config: Record<string, ComponentConfig> }> = {
-  default: {
-    label: "Balanced Market",
-    desc: "Standard market simulation with moderate trend and volatility",
-    // Sumber kebenaran tunggal: DEFAULT_COMPONENTS di chartStore.
-    config: DEFAULT_COMPONENTS,
-  },
-  strongTrend: {
-    label: "Bull Trend Rally",
-    desc: "High directional drift with persistent momentum",
-    config: {
-      noise: { enabled: true, params: { noiseLevel: 0.08 } },
-      trend: { enabled: true, params: { trendStrength: 0.025, trendBias: 0.8 } },
-      volatility: { enabled: true, params: { omega: 0.0003, alpha: 0.08, beta: 0.88, scale: 1 } },
-      "mean-reversion": { enabled: false, params: { strength: 0.01, window: 30 } },
-      liquidity: { enabled: false, params: { sweepProbability: 0.1, proximity: 0.5, pushScale: 0.1 } },
-    },
-  },
-  highVolatility: {
-    label: "Volatile Shocks",
-    desc: "High variance clustering and sharp price spikes",
-    config: {
-      noise: { enabled: true, params: { noiseLevel: 0.15 } },
-      trend: { enabled: false, params: { trendStrength: 0.005, trendBias: 0 } },
-      volatility: { enabled: true, params: { omega: 0.0008, alpha: 0.22, beta: 0.75, scale: 1.8 } },
-      "mean-reversion": { enabled: true, params: { strength: 0.015, window: 15 } },
-      liquidity: { enabled: true, params: { sweepProbability: 0.25, proximity: 0.8, pushScale: 0.25 } },
-    },
-  },
-  rangeBound: {
-    label: "Ranging / Mean Reverting",
-    desc: "Oscillating market stuck in tight horizontal channel",
-    config: {
-      noise: { enabled: true, params: { noiseLevel: 0.1 } },
-      trend: { enabled: false, params: { trendStrength: 0, trendBias: 0 } },
-      volatility: { enabled: true, params: { omega: 0.0003, alpha: 0.05, beta: 0.85, scale: 0.8 } },
-      "mean-reversion": { enabled: true, params: { strength: 0.045, window: 25 } },
-      liquidity: { enabled: false, params: { sweepProbability: 0.1, proximity: 0.5, pushScale: 0.1 } },
-    },
-  },
-  liquiditySweeps: {
-    label: "Stop Hunt / Sweep Mode",
-    desc: "Frequent fakeouts and liquidity level sweeps",
-    config: {
-      noise: { enabled: true, params: { noiseLevel: 0.09 } },
-      trend: { enabled: true, params: { trendStrength: 0.005, trendBias: 0.1 } },
-      volatility: { enabled: true, params: { omega: 0.0004, alpha: 0.12, beta: 0.82, scale: 1.2 } },
-      "mean-reversion": { enabled: true, params: { strength: 0.02, window: 20 } },
-      liquidity: { enabled: true, params: { sweepProbability: 0.35, proximity: 0.7, pushScale: 0.3 } },
     },
   },
 };

@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { useChartStore, cloneComponents } from "../app/chartStore";
 import { PRESETS, activePresetId } from "./presets";
 import "../styles/component-panel.css";
@@ -71,6 +72,7 @@ export function ComponentPanel() {
     error,
     tickCount,
     seed,
+    playback,
   } = useChartStore();
   const ids = Object.keys(components);
 
@@ -103,9 +105,30 @@ export function ComponentPanel() {
     setPhases(next);
   };
 
+  // Drag berbasis pointer (bukan HTML5 DnD): kompatibel dengan WebView2/Tauri.
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const dragIndexRef = useRef<number | null>(null);
+
+  const reorderPhase = (from: number, to: number) => {
+    if (from === to) return;
+    const current = useChartStore.getState().phases;
+    if (!current) return;
+    const next = [...current];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    useChartStore.getState().setPhases(next);
+  };
+
   const activeKey = activePresetId(components);
   const activeDesc =
     activeKey === "custom" ? "Konfigurasi komponen diedit manual, tidak sesuai preset mana pun." : PRESETS[activeKey].desc;
+
+  let phaseAcc = 0;
+  const phaseBounds = (phases ?? []).map((p) => (phaseAcc += p.count));
+  // Index playback = jumlah tick yang sudah diproses; fase ke-i aktif selama
+  // batas kumulatif sebelumnya < index <= batas kumulatif fase ke-i.
+  const activePhase =
+    playback.index > 0 ? phaseBounds.findIndex((bound) => playback.index <= bound) : -1;
 
   return (
     <div className="component-panel-container">
@@ -157,10 +180,58 @@ export function ComponentPanel() {
               {phases.map((ph, i) => {
                 const pid = activePresetId(ph.components);
                 const label = pid === "custom" ? "Custom" : PRESETS[pid].label;
+                const active = i === activePhase;
+                const isDragging = dragIndex === i;
                 return (
-                  <div key={i} className="cp-phase-row">
+                  <div
+                    key={i}
+                    data-index={i}
+                    className={`cp-phase-row ${active ? "is-active" : ""} ${isDragging ? "is-dragging" : ""}`}
+                  >
+                    <span
+                      className="cp-phase-drag"
+                      onPointerDown={(e) => {
+                        if (isLoading) return;
+                        e.preventDefault();
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                        dragIndexRef.current = i;
+                        setDragIndex(i);
+                      }}
+                      onPointerMove={(e) => {
+                        const from = dragIndexRef.current;
+                        if (from === null) return;
+                        e.preventDefault();
+                        const row = document
+                          .elementFromPoint(e.clientX, e.clientY)
+                          ?.closest(".cp-phase-row");
+                        if (!row) return;
+                        const to = Number(row.getAttribute("data-index"));
+                        if (Number.isFinite(to) && to !== from) {
+                          reorderPhase(from, to);
+                          dragIndexRef.current = to;
+                          setDragIndex(to);
+                        }
+                      }}
+                      onPointerUp={() => {
+                        dragIndexRef.current = null;
+                        setDragIndex(null);
+                      }}
+                      onPointerCancel={() => {
+                        dragIndexRef.current = null;
+                        setDragIndex(null);
+                      }}
+                      title={isLoading ? undefined : "Drag untuk mengubah urutan"}
+                      aria-label={`Reorder phase ${i + 1}`}
+                    >
+                      ⋮⋮
+                    </span>
                     <span className="cp-phase-index">{i + 1}.</span>
-                    <span className="cp-phase-label">{label}</span>
+                    <span className="cp-phase-label">
+                      {label}
+                      {active && (
+                        <span className="cp-phase-live" title="Fase yang sedang berlangsung" aria-hidden="true" />
+                      )}
+                    </span>
                     <input
                       type="number"
                       min={100}

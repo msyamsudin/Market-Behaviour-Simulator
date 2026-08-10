@@ -125,6 +125,63 @@
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 4px 8px;
+  transition: all 0.2s ease;
+}
+
+.cp-phase-row.is-active {
+  border-color: rgba(8, 153, 129, 0.6);
+  background-color: rgba(8, 153, 129, 0.08);
+  box-shadow: 0 0 8px rgba(8, 153, 129, 0.15);
+}
+
+.cp-phase-row.is-dragging {
+  opacity: 0.5;
+  border-color: var(--accent-blue);
+  transform: scale(0.98);
+}
+
+.cp-phase-drag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: -2px;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.cp-phase-drag:hover {
+  color: var(--accent-blue);
+}
+
+.cp-phase-drag:active {
+  cursor: grabbing;
+}
+
+.cp-phase-live {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-green);
+  box-shadow: 0 0 6px rgba(8, 153, 129, 0.7);
+  animation: cp-live-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes cp-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .cp-phase-index {

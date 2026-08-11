@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 
+# Documentation
+docs/
+
 # Environment variables (keep .env.example)
 .env
 .env.*
